@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Input, Button, Textarea, Switch } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
@@ -9,14 +9,21 @@ import type { Waybill, PackageCondition, ReceiptForm } from '@/types';
 import { formatFullTime, getPackageConditionText } from '@/utils';
 
 const ReceiptPage: React.FC = () => {
-  const { waybills, getWaybillById, saveReceipt, getReceipt } = useWaybillStore();
+  const {
+    waybills,
+    getWaybillById,
+    saveReceipt,
+    getReceipt,
+    selectedReceiptWaybillId,
+    setSelectedReceiptWaybillId
+  } = useWaybillStore();
 
   const arrivingWaybills = useMemo(
-    () => waybills.filter((w: Waybill) => w.status === 'arriving' || w.status === 'transit'),
+    () => waybills.filter((w: Waybill) => w.status === 'arriving' || w.status === 'transit' || w.status === 'completed' || w.status === 'loading'),
     [waybills]
   );
 
-  const [selectedWaybillId, setSelectedWaybillId] = useState<string>('2');
+  const [selectedWaybillId, setSelectedWaybillId] = useState<string>('');
   const [actualTemp, setActualTemp] = useState<string>('');
   const [packageCondition, setPackageCondition] = useState<PackageCondition | null>(null);
   const [isRejected, setIsRejected] = useState<boolean>(false);
@@ -24,8 +31,32 @@ const ReceiptPage: React.FC = () => {
   const [remark, setRemark] = useState<string>('');
   const [operatorName, setOperatorName] = useState<string>('');
   const [tempFocused, setTempFocused] = useState<boolean>(false);
-  const [submitted, setSubmitted] = useState<boolean>(false);
-  const [submittedForm, setSubmittedForm] = useState<ReceiptForm | null>(null);
+  const [showSubmittedView, setShowSubmittedView] = useState<boolean>(false);
+
+  useEffect(() => {
+    let initialId = selectedReceiptWaybillId;
+    console.log('[ReceiptPage] store中selectedReceiptWaybillId:', initialId);
+
+    if (!initialId && arrivingWaybills.length > 0) {
+      initialId = arrivingWaybills[0].id;
+    }
+    if (initialId) {
+      setSelectedWaybillId(initialId);
+      const existing = getReceipt(initialId);
+      if (existing) {
+        console.log('[ReceiptPage] 发现已提交记录，自动回显:', existing);
+        setActualTemp(existing.actualTemperature.toString());
+        setPackageCondition(existing.packageCondition);
+        setIsRejected(existing.isRejected);
+        setRejectReason(existing.rejectReason || '');
+        setRemark(existing.remark || '');
+        setOperatorName(existing.operatorName || '');
+        setShowSubmittedView(true);
+      } else {
+        resetForm();
+      }
+    }
+  }, [selectedReceiptWaybillId, arrivingWaybills, getReceipt]);
 
   const selectedWaybill = useMemo(
     () => getWaybillById(selectedWaybillId) || arrivingWaybills[0],
@@ -34,32 +65,6 @@ const ReceiptPage: React.FC = () => {
 
   const existingReceipt = selectedWaybill ? getReceipt(selectedWaybill.id) : undefined;
 
-  const handleSelectWaybill = () => {
-    console.log('[ReceiptPage] 选择运单');
-    const items = arrivingWaybills.map((w: Waybill) => ({
-      id: w.id,
-      name: `${w.waybillNo} - ${w.goodsName}`
-    }));
-    if (items.length === 0) {
-      Taro.showToast({ title: '暂无待收货运单', icon: 'none' });
-      return;
-    }
-    Taro.showActionSheet({
-      itemList: items.map(i => i.name),
-      success: (res) => {
-        const selected = items[res.tapIndex];
-        console.log('[ReceiptPage] 选择了运单:', selected.id);
-        setSelectedWaybillId(selected.id);
-        resetForm();
-      },
-      fail: (err) => {
-        if (err.errMsg !== 'showActionSheet:fail cancel') {
-          console.error('[ReceiptPage] 选择运单失败:', err);
-        }
-      }
-    });
-  };
-
   const resetForm = () => {
     setActualTemp('');
     setPackageCondition(null);
@@ -67,26 +72,66 @@ const ReceiptPage: React.FC = () => {
     setRejectReason('');
     setRemark('');
     setOperatorName('');
-    setSubmitted(false);
-    setSubmittedForm(null);
+    setShowSubmittedView(false);
+  };
+
+  const handleSelectWaybill = () => {
+    console.log('[ReceiptPage] 选择运单');
+    const items = arrivingWaybills.map((w: Waybill) => {
+      const done = getReceipt(w.id) ? ' ✓已验' : '';
+      return { id: w.id, name: `${w.waybillNo} - ${w.goodsName}${done}` };
+    });
+    if (items.length === 0) {
+      Taro.showToast({ title: '暂无运单', icon: 'none' });
+      return;
+    }
+    Taro.showActionSheet({
+      itemList: items.map(i => i.name),
+      success: (res) => {
+        const selected = items[res.tapIndex];
+        console.log('[ReceiptPage] 选择了运单:', selected.id);
+        setSelectedReceiptWaybillId(selected.id);
+        setSelectedWaybillId(selected.id);
+        const existing = getReceipt(selected.id);
+        if (existing) {
+          console.log('[ReceiptPage] 切换到已验运单，回显记录');
+          setActualTemp(existing.actualTemperature.toString());
+          setPackageCondition(existing.packageCondition);
+          setIsRejected(existing.isRejected);
+          setRejectReason(existing.rejectReason || '');
+          setRemark(existing.remark || '');
+          setOperatorName(existing.operatorName || '');
+          setShowSubmittedView(true);
+        } else {
+          resetForm();
+        }
+      }
+    });
   };
 
   const handleTempInput = (e: any) => {
-    setActualTemp(e.detail.value);
+    let val = e.detail.value;
+    val = val.replace(/[^\d.\-]/g, '');
+    const firstNeg = val.indexOf('-');
+    if (firstNeg !== -1) {
+      val = '-' + val.slice(firstNeg + 1).replace(/-/g, '');
+    }
+    const dotCount = (val.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      const lastDot = val.lastIndexOf('.');
+      val = val.slice(0, lastDot) + val.slice(lastDot + 1);
+    }
+    setActualTemp(val);
   };
 
   const handlePackageSelect = (condition: PackageCondition) => {
-    console.log('[ReceiptPage] 选择包装状态:', condition);
     setPackageCondition(condition);
   };
 
   const handleRejectToggle = (e: any) => {
     const value = e.detail.value;
-    console.log('[ReceiptPage] 拒收开关:', value);
     setIsRejected(value);
-    if (!value) {
-      setRejectReason('');
-    }
+    if (!value) setRejectReason('');
   };
 
   const canSubmit = useMemo(() => {
@@ -99,10 +144,9 @@ const ReceiptPage: React.FC = () => {
 
   const handleSubmit = () => {
     if (!selectedWaybill || !canSubmit) return;
-
     const form: ReceiptForm = {
       waybillId: selectedWaybill.id,
-      actualTemperature: parseFloat(actualTemp),
+      actualTemperature: Number(parseFloat(actualTemp).toFixed(2)),
       packageCondition,
       isRejected,
       rejectReason: isRejected ? rejectReason : undefined,
@@ -110,12 +154,9 @@ const ReceiptPage: React.FC = () => {
       operatorName: operatorName || undefined,
       operateTime: new Date().toISOString()
     };
-
     console.log('[ReceiptPage] 提交验温单:', form);
     saveReceipt(selectedWaybill.id, form);
-    setSubmittedForm(form);
-    setSubmitted(true);
-
+    setShowSubmittedView(true);
     Taro.showToast({ title: '验温成功', icon: 'success' });
   };
 
@@ -123,8 +164,11 @@ const ReceiptPage: React.FC = () => {
     resetForm();
   };
 
+  const handleEditAgain = () => {
+    setShowSubmittedView(false);
+  };
+
   const handleScan = () => {
-    console.log('[ReceiptPage] 点击扫码');
     Taro.navigateTo({ url: '/pages/scan/index' });
   };
 
@@ -132,16 +176,28 @@ const ReceiptPage: React.FC = () => {
     Taro.switchTab({ url: '/pages/waybills/index' });
   };
 
-  if (submitted && submittedForm && selectedWaybill) {
+  const displayTemp = useMemo(() => {
+    if (actualTemp === '' || isNaN(parseFloat(actualTemp))) return '';
+    const num = parseFloat(actualTemp);
+    return (num > 0 ? '' : num === 0 ? '' : '') + num.toString();
+  }, [actualTemp]);
+
+  if (showSubmittedView && existingReceipt && selectedWaybill) {
     return (
       <View className={styles.page}>
         <View className={styles.header}>
           <Text className={styles.title}>收货验温</Text>
-          <Text className={styles.subtitle}>验温记录已保存</Text>
+          <Text className={styles.subtitle}>
+            {existingReceipt.isRejected ? '已拒收，请联系承运方' : '验温记录已保存'}
+          </Text>
         </View>
         <View className={styles.successState}>
-          <View className={styles.successIcon}>✓</View>
-          <Text className={styles.successTitle}>验温成功</Text>
+          <View className={classnames(styles.successIcon, existingReceipt.isRejected && styles.rejectIcon)}>
+            {existingReceipt.isRejected ? '×' : '✓'}
+          </View>
+          <Text className={classnames(styles.successTitle, existingReceipt.isRejected && styles.rejectTitle)}>
+            {existingReceipt.isRejected ? '已拒收' : '验温成功'}
+          </Text>
           <Text className={styles.successDesc}>
             验温记录已同步至承运方，可用于后续对账沟通
           </Text>
@@ -157,34 +213,58 @@ const ReceiptPage: React.FC = () => {
             <View className={styles.successReceiptRow}>
               <Text className={styles.successReceiptLabel}>实测温度</Text>
               <Text className={styles.successReceiptValue}>
-                {submittedForm.actualTemperature}°C
+                {existingReceipt.actualTemperature}°C
+              </Text>
+            </View>
+            <View className={styles.successReceiptRow}>
+              <Text className={styles.successReceiptLabel}>约定范围</Text>
+              <Text className={styles.successReceiptValue}>
+                {selectedWaybill.agreeTempRange.min}°C ~ {selectedWaybill.agreeTempRange.max}°C
               </Text>
             </View>
             <View className={styles.successReceiptRow}>
               <Text className={styles.successReceiptLabel}>包装状态</Text>
               <Text className={styles.successReceiptValue}>
-                {getPackageConditionText(submittedForm.packageCondition || '')}
+                {getPackageConditionText(existingReceipt.packageCondition || '')}
               </Text>
             </View>
             <View className={styles.successReceiptRow}>
               <Text className={styles.successReceiptLabel}>是否拒收</Text>
               <Text
                 className={styles.successReceiptValue}
-                style={{ color: submittedForm.isRejected ? '#F44336' : '#4CAF50' }}
+                style={{ color: existingReceipt.isRejected ? '#F44336' : '#4CAF50' }}
               >
-                {submittedForm.isRejected ? '已拒收' : '正常收货'}
+                {existingReceipt.isRejected ? '已拒收' : '正常收货'}
               </Text>
             </View>
+            {existingReceipt.isRejected && existingReceipt.rejectReason && (
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>拒收原因</Text>
+                <Text className={styles.successReceiptValue}>{existingReceipt.rejectReason}</Text>
+              </View>
+            )}
+            {existingReceipt.remark && (
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>备注</Text>
+                <Text className={styles.successReceiptValue}>{existingReceipt.remark}</Text>
+              </View>
+            )}
+            {existingReceipt.operatorName && (
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>收货人</Text>
+                <Text className={styles.successReceiptValue}>{existingReceipt.operatorName}</Text>
+              </View>
+            )}
             <View className={styles.successReceiptRow}>
               <Text className={styles.successReceiptLabel}>操作时间</Text>
               <Text className={styles.successReceiptValue}>
-                {formatFullTime(submittedForm.operateTime || new Date().toISOString())}
+                {formatFullTime(existingReceipt.operateTime || new Date().toISOString())}
               </Text>
             </View>
           </View>
           <View className={styles.successActions}>
-            <Button className={styles.cancelBtn} onClick={handleReset}>
-              继续验温
+            <Button className={styles.cancelBtn} onClick={handleEditAgain}>
+              修改验温
             </Button>
             <Button className={styles.submitBtn} onClick={goToWaybills}>
               返回运单
@@ -236,7 +316,12 @@ const ReceiptPage: React.FC = () => {
           <Text className={styles.selectLabel}>待验运单</Text>
           <View className={styles.selectRow}>
             <View className={styles.selectInfo}>
-              <Text className={styles.selectNo}>{selectedWaybill.waybillNo}</Text>
+              <Text className={styles.selectNo}>
+                {selectedWaybill.waybillNo}
+                {existingReceipt && (
+                  <Text className={styles.alreadyBadge}>已验</Text>
+                )}
+              </Text>
               <Text className={styles.selectGoods}>
                 {selectedWaybill.goodsName} · {selectedWaybill.receiver}
               </Text>
@@ -261,11 +346,10 @@ const ReceiptPage: React.FC = () => {
             <View
               className={classnames(styles.tempInputWrap, tempFocused && styles.focused)}
             >
-              <Text className={styles.tempUnit}>-</Text>
               <Input
                 className={styles.tempInput}
-                type="digit"
-                placeholder="0.0"
+                type="text"
+                placeholder="-18.0 或 3.0"
                 placeholderStyle="color: #C9CDD4"
                 value={actualTemp}
                 onInput={handleTempInput}
@@ -275,7 +359,11 @@ const ReceiptPage: React.FC = () => {
               <Text className={styles.tempUnit}>°C</Text>
             </View>
             <View className={styles.tempRange}>
-              <Text>运输过程温度：{selectedWaybill.minTemp.toFixed(1)}°C ~ {selectedWaybill.maxTemp.toFixed(1)}°C</Text>
+              <Text>
+                当前车内：{selectedWaybill.currentTemp}°C
+                {'  |  '}
+                全程{selectedWaybill.minTemp.toFixed(1)}°C ~ {selectedWaybill.maxTemp.toFixed(1)}°C
+              </Text>
               <Text className={styles.tempAgree}>
                 约定范围 {selectedWaybill.agreeTempRange.min}°C ~ {selectedWaybill.agreeTempRange.max}°C
               </Text>

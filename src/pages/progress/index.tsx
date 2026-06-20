@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
@@ -7,12 +7,50 @@ import ProgressTimeline from '@/components/ProgressTimeline';
 import RiskBadge from '@/components/RiskBadge';
 import WarningRecord from '@/components/WarningRecord';
 import { useWaybillStore } from '@/store/waybill';
-import type { Waybill } from '@/types';
-import { formatTime, maskPhone } from '@/utils';
+import type { Waybill, RiskLevel } from '@/types';
+import { formatTime, maskPhone, getRiskLevelText } from '@/utils';
+
+const getRiskTempText = (risk: RiskLevel, temp: number, min: number, max: number) => {
+  switch (risk) {
+    case 'low':
+      return `${temp}°C（正常范围内）`;
+    case 'warn':
+      if (temp < min) return `${temp}°C（略低于约定范围，请关注）`;
+      if (temp > max) return `${temp}°C（略高于约定范围，请关注）`;
+      return `${temp}°C（接近约定范围边界，需关注）`;
+    case 'high':
+      if (temp < min) return `${temp}°C（低于约定范围，建议联系司机）`;
+      if (temp > max) return `${temp}°C（高于约定范围，建议联系司机）`;
+      return `${temp}°C（偏离约定范围，建议联系司机）`;
+  }
+};
 
 const ProgressPage: React.FC = () => {
-  const { waybills, getWaybillById } = useWaybillStore();
+  const {
+    waybills,
+    getWaybillById,
+    currentWaybill: storeCurrentWaybill,
+    nowTimestamp,
+    tickNow,
+    getWaybillArrivingIn30Min,
+    setSelectedReceiptWaybillId
+  } = useWaybillStore();
+
   const [currentWaybillId, setCurrentWaybillId] = useState<string>('1');
+  const notifiedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (storeCurrentWaybill) {
+      setCurrentWaybillId(storeCurrentWaybill.id);
+    }
+  }, [storeCurrentWaybill]);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      tickNow();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [tickNow]);
 
   const activeWaybills = useMemo(
     () => waybills.filter((w: Waybill) => w.status !== 'completed'),
@@ -24,8 +62,21 @@ const ProgressPage: React.FC = () => {
     [currentWaybillId, activeWaybills, getWaybillById]
   );
 
+  const arrivalReminder = useMemo(() => {
+    if (!currentWaybill) return null;
+    return getWaybillArrivingIn30Min(currentWaybill.id);
+  }, [currentWaybill, getWaybillArrivingIn30Min, nowTimestamp]);
+
+  useEffect(() => {
+    if (arrivalReminder && !notifiedRef.current.has(arrivalReminder.waybillId)) {
+      notifiedRef.current.add(arrivalReminder.waybillId);
+      const title = `🔔 即将到达：${arrivalReminder.goodsName}`;
+      const content = `预计${arrivalReminder.minutesLeft}分钟后到达，预测到货温度${arrivalReminder.predictTemp}°C（${getRiskLevelText(arrivalReminder.predictRisk)}）`;
+      console.log('[ProgressPage] 触发到货提醒:', title, content);
+    }
+  }, [arrivalReminder]);
+
   const handleSelectWaybill = () => {
-    console.log('[ProgressPage] 选择运单');
     const items = activeWaybills.map((w: Waybill) => ({
       id: w.id,
       name: `${w.waybillNo} - ${w.goodsName}`
@@ -34,26 +85,23 @@ const ProgressPage: React.FC = () => {
       itemList: items.map(i => i.name),
       success: (res) => {
         const selected = items[res.tapIndex];
-        console.log('[ProgressPage] 选择了运单:', selected.id);
         setCurrentWaybillId(selected.id);
-      },
-      fail: (err) => {
-        if (err.errMsg !== 'showActionSheet:fail cancel') {
-          console.error('[ProgressPage] 选择运单失败:', err);
-        }
       }
     });
   };
 
   const handleCallDriver = () => {
     if (!currentWaybill) return;
-    console.log('[ProgressPage] 拨打司机电话:', currentWaybill.driverPhone);
     Taro.makePhoneCall({
-      phoneNumber: currentWaybill.driverPhone,
-      fail: (err) => {
-        console.error('[ProgressPage] 拨号失败:', err);
-      }
+      phoneNumber: currentWaybill.driverPhone
     });
+  };
+
+  const goToReceipt = () => {
+    if (!currentWaybill) return;
+    console.log('[ProgressPage] 从路线进度去验温，设置验温运单ID:', currentWaybill.id);
+    setSelectedReceiptWaybillId(currentWaybill.id);
+    Taro.switchTab({ url: '/pages/receipt/index' });
   };
 
   const goToWaybills = () => {
@@ -78,13 +126,14 @@ const ProgressPage: React.FC = () => {
     );
   }
 
-  const now = Date.now();
+  const now = nowTimestamp;
   const etaMs = new Date(currentWaybill.estimatedArrival).getTime() - now;
   const hoursLeft = Math.max(0, Math.floor(etaMs / (1000 * 60 * 60)));
   const minsLeft = Math.max(0, Math.floor((etaMs % (1000 * 60 * 60)) / (1000 * 60)));
 
-  const isArrivingSoon = currentWaybill.status === 'arriving';
   const hasHighRisk = currentWaybill.riskLevel === 'high';
+  const pushTemp = arrivalReminder ? arrivalReminder.predictTemp : (currentWaybill.currentTemp + 0.3);
+  const pushRisk = arrivalReminder ? arrivalReminder.predictRisk : 'low';
 
   return (
     <View className={styles.page}>
@@ -125,19 +174,60 @@ const ProgressPage: React.FC = () => {
         </View>
       </View>
 
-      {isArrivingSoon && (
-        <View className={styles.pushCard}>
+      {arrivalReminder && (
+        <View
+          className={
+            styles.pushCard +
+            ' ' +
+            (pushRisk === 'warn'
+              ? styles.pushCardWarn
+              : pushRisk === 'high'
+              ? styles.pushCardHigh
+              : '')
+          }
+        >
           <View className={styles.pushHeader}>
             <View className={styles.pushIcon}>🔔</View>
-            <Text className={styles.pushTitle}>到货提醒</Text>
+            <Text className={styles.pushTitle}>
+              {arrivalReminder.minutesLeft <= 10 ? '即将到达' : '到货提醒'}
+              <Text className={styles.pushTag}>{getRiskLevelText(pushRisk)}</Text>
+            </Text>
           </View>
           <Text className={styles.pushContent}>
-            {currentWaybill.goodsName} 即将于30分钟内送达，请提前安排收货人员。
+            {currentWaybill.goodsName} 将于约{arrivalReminder.minutesLeft}分钟后送达，请提前安排收货人员。
             根据当前温度趋势预测，到货时温度约为
           </Text>
-          <Text className={styles.pushTemp}>
-            {(currentWaybill.currentTemp + 0.3).toFixed(1)}°C（正常范围）
+          <Text
+            className={
+              styles.pushTemp +
+              ' ' +
+              (pushRisk === 'warn'
+                ? styles.pushTempWarn
+                : pushRisk === 'high'
+                ? styles.pushTempHigh
+                : '')
+            }
+          >
+            {getRiskTempText(
+              pushRisk,
+              Number(pushTemp.toFixed(1)),
+              currentWaybill.agreeTempRange.min,
+              currentWaybill.agreeTempRange.max
+            )}
           </Text>
+          <View className={styles.pushActions}>
+            <Button
+              className={styles.pushActionReceipt}
+              onClick={goToReceipt}
+            >
+              📋 准备验温
+            </Button>
+            {pushRisk !== 'low' && (
+              <Button className={styles.pushActionCall} onClick={handleCallDriver}>
+                📞 联系司机
+              </Button>
+            )}
+          </View>
         </View>
       )}
 

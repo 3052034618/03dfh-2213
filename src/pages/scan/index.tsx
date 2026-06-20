@@ -6,7 +6,11 @@ import styles from './index.module.scss';
 import { useWaybillStore } from '@/store/waybill';
 
 const ScanPage: React.FC = () => {
-  const { getWaybillByNo } = useWaybillStore();
+  const {
+    getWaybillByNo,
+    setCurrentWaybill,
+    setSelectedReceiptWaybillId
+  } = useWaybillStore();
   const [waybillNo, setWaybillNo] = useState<string>('');
   const [inputFocused, setInputFocused] = useState<boolean>(false);
 
@@ -39,7 +43,9 @@ const ScanPage: React.FC = () => {
 
     const waybill = getWaybillByNo(searchNo);
     if (waybill) {
-      console.log('[ScanPage] 找到运单:', waybill.id);
+      console.log('[ScanPage] 找到运单，设置上下文并跳转:', waybill.id);
+      setCurrentWaybill(waybill);
+      setSelectedReceiptWaybillId(waybill.id);
       Taro.redirectTo({
         url: `/pages/detail/index?id=${waybill.id}`
       });

@@ -305,10 +305,76 @@
 .pushTemp {
   display: inline-flex;
   align-items: center;
-  padding: 8rpx 16rpx;
+  padding: 12rpx 20rpx;
   background: $color-success-bg;
   color: $color-success;
-  border-radius: $radius-sm;
-  font-size: $font-size-sm;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
   font-weight: $font-weight-semibold;
+  margin-bottom: $spacing-md;
+}
+
+.pushCardWarn {
+  border: 2rpx solid rgba(255, 152, 0, 0.3);
+}
+
+.pushCardHigh {
+  border: 2rpx solid rgba(244, 67, 54, 0.3);
+}
+
+.pushTempWarn {
+  background: $color-warning-bg !important;
+  color: $color-warning !important;
+}
+
+.pushTempHigh {
+  background: $color-error-bg !important;
+  color: $color-error !important;
+}
+
+.pushTag {
+  display: inline-block;
+  margin-left: $spacing-sm;
+  padding: 4rpx 14rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  vertical-align: middle;
+}
+
+.pushActions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.pushActionReceipt {
+  @include button-reset;
+  flex: 1;
+  height: 76rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.pushActionCall {
+  @include button-reset;
+  flex: 1;
+  height: 76rpx;
+  background: $color-warning-bg;
+  color: $color-warning;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
 }

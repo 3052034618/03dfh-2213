@@ -12,7 +12,11 @@ import { formatTime, getStatusColor, maskPhone } from '@/utils';
 
 const DetailPage: React.FC = () => {
   const router = useRouter();
-  const { getWaybillById } = useWaybillStore();
+  const {
+    getWaybillById,
+    setCurrentWaybill,
+    setSelectedReceiptWaybillId
+  } = useWaybillStore();
   const [waybill, setWaybill] = useState<any>(null);
 
   useEffect(() => {
@@ -36,7 +40,10 @@ const DetailPage: React.FC = () => {
   };
 
   const handleGoReceipt = () => {
-    console.log('[DetailPage] 跳转验温');
+    if (!waybill) return;
+    console.log('[DetailPage] 从详情页去验温，设置运单ID:', waybill.id);
+    setCurrentWaybill(waybill);
+    setSelectedReceiptWaybillId(waybill.id);
     Taro.switchTab({ url: '/pages/receipt/index' });
   };
 

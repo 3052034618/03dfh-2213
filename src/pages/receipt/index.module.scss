@@ -479,3 +479,23 @@
   color: $color-text-tertiary;
   margin-bottom: $spacing-lg;
 }
+
+.alreadyBadge {
+  display: inline-block;
+  margin-left: $spacing-sm;
+  padding: 4rpx 14rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.rejectIcon {
+  background: $color-error-bg !important;
+  color: $color-error;
+}
+
+.rejectTitle {
+  color: $color-error;
+}
