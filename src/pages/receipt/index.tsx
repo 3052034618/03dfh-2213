@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, Input, Button, Textarea, Switch } from '@tarojs/components';
+import { View, Text, Input, Button, Textarea, Switch, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import styles from './index.module.scss';
@@ -7,24 +7,24 @@ import WarningRecordComp from '@/components/WarningRecord';
 import ArrivalReminder from '@/components/ArrivalReminder';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill, PackageCondition, ReceiptForm } from '@/types';
-import { formatFullTime, getPackageConditionText } from '@/utils';
+import { formatFullTime, getPackageConditionText, formatTime } from '@/utils';
 
 const ReceiptPage: React.FC = () => {
   const {
-    waybills,
     getWaybillById,
     saveReceipt,
     getReceipt,
     selectedReceiptWaybillId,
-    setSelectedReceiptWaybillId
+    setSelectedReceiptWaybillId,
+    setCurrentWaybill,
+    getReceiptQueue,
+    getNextPendingReceipt,
+    tickNow,
+    nowTimestamp
   } = useWaybillStore();
 
-  const arrivingWaybills = useMemo(
-    () => waybills.filter((w: Waybill) => w.status === 'arriving' || w.status === 'transit' || w.status === 'completed' || w.status === 'loading'),
-    [waybills]
-  );
-
   const [selectedWaybillId, setSelectedWaybillId] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<number>(0);
   const [actualTemp, setActualTemp] = useState<string>('');
   const [packageCondition, setPackageCondition] = useState<PackageCondition | null>(null);
   const [isRejected, setIsRejected] = useState<boolean>(false);
@@ -35,11 +35,22 @@ const ReceiptPage: React.FC = () => {
   const [showSubmittedView, setShowSubmittedView] = useState<boolean>(false);
 
   useEffect(() => {
+    tickNow();
+    const timer = setInterval(() => {
+      tickNow();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [tickNow]);
+
+  const queueGroups = useMemo(() => getReceiptQueue(), [getReceiptQueue, nowTimestamp]);
+
+  useEffect(() => {
     let initialId = selectedReceiptWaybillId;
     console.log('[ReceiptPage] store中selectedReceiptWaybillId:', initialId);
 
-    if (!initialId && arrivingWaybills.length > 0) {
-      initialId = arrivingWaybills[0].id;
+    if (!initialId) {
+      const pending = queueGroups.filter(g => g.title !== '已验温').flatMap(g => g.waybills);
+      if (pending.length > 0) initialId = pending[0].id;
     }
     if (initialId) {
       setSelectedWaybillId(initialId);
@@ -57,11 +68,11 @@ const ReceiptPage: React.FC = () => {
         resetForm();
       }
     }
-  }, [selectedReceiptWaybillId, arrivingWaybills, getReceipt]);
+  }, [selectedReceiptWaybillId, queueGroups, getReceipt]);
 
   const selectedWaybill = useMemo(
-    () => getWaybillById(selectedWaybillId) || arrivingWaybills[0],
-    [selectedWaybillId, arrivingWaybills, getWaybillById]
+    () => getWaybillById(selectedWaybillId),
+    [selectedWaybillId, getWaybillById]
   );
 
   const existingReceipt = selectedWaybill ? getReceipt(selectedWaybill.id) : undefined;
@@ -76,38 +87,23 @@ const ReceiptPage: React.FC = () => {
     setShowSubmittedView(false);
   };
 
-  const handleSelectWaybill = () => {
-    console.log('[ReceiptPage] 选择运单');
-    const items = arrivingWaybills.map((w: Waybill) => {
-      const done = getReceipt(w.id) ? ' ✓已验' : '';
-      return { id: w.id, name: `${w.waybillNo} - ${w.goodsName}${done}` };
-    });
-    if (items.length === 0) {
-      Taro.showToast({ title: '暂无运单', icon: 'none' });
-      return;
+  const handleSelectWaybill = (waybill: Waybill) => {
+    console.log('[ReceiptPage] 选择运单:', waybill.id);
+    setSelectedReceiptWaybillId(waybill.id);
+    setCurrentWaybill(waybill);
+    setSelectedWaybillId(waybill.id);
+    const existing = getReceipt(waybill.id);
+    if (existing) {
+      setActualTemp(existing.actualTemperature.toString());
+      setPackageCondition(existing.packageCondition);
+      setIsRejected(existing.isRejected);
+      setRejectReason(existing.rejectReason || '');
+      setRemark(existing.remark || '');
+      setOperatorName(existing.operatorName || '');
+      setShowSubmittedView(true);
+    } else {
+      resetForm();
     }
-    Taro.showActionSheet({
-      itemList: items.map(i => i.name),
-      success: (res) => {
-        const selected = items[res.tapIndex];
-        console.log('[ReceiptPage] 选择了运单:', selected.id);
-        setSelectedReceiptWaybillId(selected.id);
-        setSelectedWaybillId(selected.id);
-        const existing = getReceipt(selected.id);
-        if (existing) {
-          console.log('[ReceiptPage] 切换到已验运单，回显记录');
-          setActualTemp(existing.actualTemperature.toString());
-          setPackageCondition(existing.packageCondition);
-          setIsRejected(existing.isRejected);
-          setRejectReason(existing.rejectReason || '');
-          setRemark(existing.remark || '');
-          setOperatorName(existing.operatorName || '');
-          setShowSubmittedView(true);
-        } else {
-          resetForm();
-        }
-      }
-    });
   };
 
   const handleTempInput = (e: any) => {
@@ -157,8 +153,19 @@ const ReceiptPage: React.FC = () => {
     };
     console.log('[ReceiptPage] 提交验温单:', form);
     saveReceipt(selectedWaybill.id, form);
-    setShowSubmittedView(true);
-    Taro.showToast({ title: '验温成功', icon: 'success' });
+
+    const next = getNextPendingReceipt(selectedWaybill.id);
+    console.log('[ReceiptPage] 下一张待处理运单:', next?.id);
+
+    if (next) {
+      Taro.showToast({ title: '验温成功，自动切换下一张', icon: 'none' });
+      setTimeout(() => {
+        handleSelectWaybill(next);
+      }, 1200);
+    } else {
+      setShowSubmittedView(true);
+      Taro.showToast({ title: '验温成功', icon: 'success' });
+    }
   };
 
   const handleReset = () => {
@@ -177,13 +184,53 @@ const ReceiptPage: React.FC = () => {
     Taro.switchTab({ url: '/pages/waybills/index' });
   };
 
-  const displayTemp = useMemo(() => {
-    if (actualTemp === '' || isNaN(parseFloat(actualTemp))) return '';
-    const num = parseFloat(actualTemp);
-    return (num > 0 ? '' : num === 0 ? '' : '') + num.toString();
-  }, [actualTemp]);
+  const getMinutesLeft = (w: Waybill) => {
+    const etaMs = new Date(w.estimatedArrival).getTime() - nowTimestamp;
+    return Math.round(etaMs / 60000);
+  };
 
-  if (showSubmittedView && existingReceipt && selectedWaybill) {
+  const getEtaLabel = (w: Waybill) => {
+    const min = getMinutesLeft(w);
+    if (min < 0) return `已到达 ${Math.abs(min)}分钟`;
+    if (min <= 10) return `⚠️ ${min}分钟后到`;
+    if (min <= 30) return `${min}分钟后到`;
+    return formatTime(w.estimatedArrival, 'HH:mm');
+  };
+
+  const isArriving = (w: Waybill) => {
+    const min = getMinutesLeft(w);
+    return min >= 0 && min <= 30;
+  };
+
+  if (!selectedWaybill) {
+    return (
+      <View className={styles.page}>
+        <View className={styles.header}>
+          <Text className={styles.title}>收货验温</Text>
+          <Text className={styles.subtitle}>请先选择要验温的运单</Text>
+        </View>
+
+        <View className={styles.content}>
+          <ArrivalReminder />
+        </View>
+
+        <View className={styles.emptyState}>
+          <Text className={styles.emptyIcon}>📋</Text>
+          <Text className={styles.emptyTitle}>暂无待收货运单</Text>
+          <Text className={styles.emptyDesc}>
+            请先在运单列表中查看运输中的运单
+          </Text>
+          <Button className={styles.submitBtn} style={{ marginTop: 24 }} onClick={goToWaybills}>
+            查看运单列表
+          </Button>
+        </View>
+      </View>
+    );
+  }
+
+  const isDone = !!existingReceipt;
+
+  if (showSubmittedView && existingReceipt) {
     return (
       <View className={styles.page}>
         <View className={styles.header}>
@@ -263,6 +310,11 @@ const ReceiptPage: React.FC = () => {
               </Text>
             </View>
           </View>
+
+          {queueGroups.length > 0 && queueGroups[0].waybills.some(w => !getReceipt(w.id)) && (
+            <Text className={styles.nextHint}>还有未处理的运单，可继续验温</Text>
+          )}
+
           <View className={styles.successActions}>
             <Button className={styles.cancelBtn} onClick={handleEditAgain}>
               修改验温
@@ -282,27 +334,6 @@ const ReceiptPage: React.FC = () => {
     );
   }
 
-  if (!selectedWaybill) {
-    return (
-      <View className={styles.page}>
-        <View className={styles.header}>
-          <Text className={styles.title}>收货验温</Text>
-          <Text className={styles.subtitle}>请先选择要验温的运单</Text>
-        </View>
-        <View className={styles.emptyState}>
-          <Text className={styles.emptyIcon}>📋</Text>
-          <Text className={styles.emptyTitle}>暂无待收货运单</Text>
-          <Text className={styles.emptyDesc}>
-            请先在运单列表中查看运输中的运单
-          </Text>
-          <Button className={styles.submitBtn} style={{ marginTop: 24 }} onClick={goToWaybills}>
-            查看运单列表
-          </Button>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View className={styles.page}>
       <View className={styles.header}>
@@ -311,12 +342,67 @@ const ReceiptPage: React.FC = () => {
       </View>
 
       <View className={styles.content}>
-        <View style={{ height: 16 }} />
+        <ArrivalReminder />
 
-        <ArrivalReminder currentWaybillId={selectedWaybill?.id} />
+        <Button className={styles.scanBtn} onClick={handleScan}>
+          📷 扫描发货单二维码
+        </Button>
+
+        <View className={styles.queueSection}>
+          <View className={styles.queueTabs}>
+            {queueGroups.map((g, idx) => (
+              <View
+                key={g.title}
+                className={classnames(
+                  styles.queueTab,
+                  activeTab === idx && styles.queueTabActive
+                )}
+                onClick={() => setActiveTab(idx)}
+              >
+                <Text>{g.title}</Text>
+                <Text className={styles.queueTabCount}>{g.waybills.length}</Text>
+              </View>
+            ))}
+          </View>
+          <ScrollView scrollX className={styles.queueList} showScrollbar={false}>
+            {queueGroups[activeTab]?.waybills.map(w => {
+              const receipt = getReceipt(w.id);
+              const selected = w.id === selectedWaybillId;
+              const arriving = isArriving(w);
+              return (
+                <View
+                  key={w.id}
+                  className={classnames(
+                    styles.queueItem,
+                    selected && styles.queueItemActive,
+                    receipt && styles.queueItemDone
+                  )}
+                  onClick={() => handleSelectWaybill(w)}
+                >
+                  <View className={styles.queueItemHeader}>
+                    <Text className={styles.queueItemNo}>{w.waybillNo.slice(-4)}</Text>
+                    {receipt && <Text className={styles.queueItemDoneBadge}>✓</Text>}
+                    {arriving && !receipt && (
+                      <Text className={styles.queueItemArriving}>
+                        {getMinutesLeft(w) <= 10 ? '🔥' : '⏰'}
+                      </Text>
+                    )}
+                  </View>
+                  <Text className={styles.queueItemGoods}>{w.goodsName}</Text>
+                  <Text className={styles.queueItemTime}>{getEtaLabel(w)}</Text>
+                  {receipt && (
+                    <Text className={styles.queueItemTemp}>{receipt.actualTemperature}°C</Text>
+                  )}
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
 
         <View className={styles.waybillSelectCard}>
-          <Text className={styles.selectLabel}>待验运单</Text>
+          <Text className={styles.selectLabel}>
+            {isDone ? '已验运单' : '当前验温'}
+          </Text>
           <View className={styles.selectRow}>
             <View className={styles.selectInfo}>
               <Text className={styles.selectNo}>
@@ -329,15 +415,8 @@ const ReceiptPage: React.FC = () => {
                 {selectedWaybill.goodsName} · {selectedWaybill.receiver}
               </Text>
             </View>
-            <Button className={styles.selectBtn} onClick={handleSelectWaybill}>
-              切换
-            </Button>
           </View>
         </View>
-
-        <Button className={styles.scanBtn} onClick={handleScan}>
-          📷 扫描发货单二维码
-        </Button>
 
         <View className={styles.formCard}>
           <Text className={styles.formTitle}>验温信息</Text>
@@ -462,7 +541,7 @@ const ReceiptPage: React.FC = () => {
           disabled={!canSubmit}
           onClick={handleSubmit}
         >
-          确认提交
+          {isDone ? '更新验温' : '确认提交'}
         </Button>
       </View>
     </View>

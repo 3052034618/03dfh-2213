@@ -94,20 +94,42 @@
   }
 }
 
-.actionCall {
+.cardRead {
+  opacity: 0.6;
+}
+
+.actionSnooze {
   @include button-reset;
-  flex: 1;
+  flex: 0.8;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 72rpx;
-  background: $color-warning-bg;
-  color: $color-warning;
+  background: $color-bg-page;
+  color: $color-text-secondary;
   border-radius: $radius-button;
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   font-weight: $font-weight-medium;
 
   &:active {
-    opacity: 0.9;
+    opacity: 0.8;
+  }
+}
+
+.actionRead {
+  @include button-reset;
+  flex: 0.5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-bold;
+
+  &:active {
+    opacity: 0.8;
   }
 }

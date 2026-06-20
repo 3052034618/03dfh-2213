@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Button } from '@tarojs/components';
 import Taro from '@tarojs/taro';
+import classnames from 'classnames';
 import styles from './index.module.scss';
 import TemperatureCard from '@/components/TemperatureCard';
 import ProgressTimeline from '@/components/ProgressTimeline';
@@ -9,7 +10,7 @@ import WarningRecord from '@/components/WarningRecord';
 import ArrivalReminder from '@/components/ArrivalReminder';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill } from '@/types';
-import { formatTime, maskPhone } from '@/utils';
+import { formatTime, maskPhone, getPackageConditionText, formatFullTime } from '@/utils';
 
 const ProgressPage: React.FC = () => {
   const {
@@ -19,7 +20,8 @@ const ProgressPage: React.FC = () => {
     nowTimestamp,
     tickNow,
     setSelectedReceiptWaybillId,
-    setCurrentWaybill
+    setCurrentWaybill,
+    getReceipt
   } = useWaybillStore();
 
   const [currentWaybillId, setCurrentWaybillId] = useState<string>('1');
@@ -69,6 +71,13 @@ const ProgressPage: React.FC = () => {
     Taro.makePhoneCall({ phoneNumber: currentWaybill.driverPhone });
   };
 
+  const handleGoReceipt = () => {
+    if (!currentWaybill) return;
+    setCurrentWaybill(currentWaybill);
+    setSelectedReceiptWaybillId(currentWaybill.id);
+    Taro.switchTab({ url: '/pages/receipt/index' });
+  };
+
   const goToWaybills = () => {
     Taro.switchTab({ url: '/pages/waybills/index' });
   };
@@ -94,6 +103,9 @@ const ProgressPage: React.FC = () => {
   const etaMs = new Date(currentWaybill.estimatedArrival).getTime() - nowTimestamp;
   const hoursLeft = Math.max(0, Math.floor(etaMs / (1000 * 60 * 60)));
   const minsLeft = Math.max(0, Math.floor((etaMs % (1000 * 60 * 60)) / (1000 * 60)));
+
+  const receipt = getReceipt(currentWaybill.id);
+  const hasReceipt = !!receipt;
 
   return (
     <View className={styles.page}>
@@ -191,6 +203,79 @@ const ProgressPage: React.FC = () => {
       </View>
 
       <WarningRecord warnings={currentWaybill.warnings} />
+
+      {hasReceipt && receipt ? (
+        <View className={styles.receiptStatusCard}>
+          <View className={styles.receiptStatusHeader}>
+            <Text className={styles.receiptStatusIcon}>✓</Text>
+            <Text className={styles.receiptStatusTitle}>已验温</Text>
+          </View>
+          <View className={styles.receiptStatusGrid}>
+            <View className={styles.receiptStatusItem}>
+              <Text className={styles.receiptStatusLabel}>实测温度</Text>
+              <Text className={styles.receiptStatusValue}>
+                {receipt.actualTemperature}°C
+              </Text>
+            </View>
+            <View className={styles.receiptStatusItem}>
+              <Text className={styles.receiptStatusLabel}>包装状态</Text>
+              <Text className={styles.receiptStatusValue}>
+                {getPackageConditionText(receipt.packageCondition || '')}
+              </Text>
+            </View>
+            <View className={styles.receiptStatusItem}>
+              <Text className={styles.receiptStatusLabel}>是否拒收</Text>
+              <Text
+                className={styles.receiptStatusValue}
+                style={{ color: receipt.isRejected ? '#F44336' : '#4CAF50' }}
+              >
+                {receipt.isRejected ? '已拒收' : '正常收货'}
+              </Text>
+            </View>
+            <View className={styles.receiptStatusItem}>
+              <Text className={styles.receiptStatusLabel}>收货人</Text>
+              <Text className={styles.receiptStatusValue}>
+                {receipt.operatorName || '-'}
+              </Text>
+            </View>
+            <View className={styles.receiptStatusItemFull}>
+              <Text className={styles.receiptStatusLabel}>操作时间</Text>
+              <Text className={styles.receiptStatusValue}>
+                {formatFullTime(receipt.operateTime || new Date().toISOString())}
+              </Text>
+            </View>
+          </View>
+          <View className={styles.receiptStatusActions}>
+            <Button
+              className={classnames(styles.receiptStatusBtn, styles.receiptStatusSecondary)}
+              onClick={handleCallDriver}
+            >
+              联系司机
+            </Button>
+            <Button
+              className={classnames(styles.receiptStatusBtn, styles.receiptStatusPrimary)}
+              onClick={handleGoReceipt}
+            >
+              修改验温
+            </Button>
+          </View>
+        </View>
+      ) : (
+        <View className={styles.receiptStatusActions}>
+          <Button
+            className={classnames(styles.receiptStatusBtn, styles.receiptStatusSecondary)}
+            onClick={handleCallDriver}
+          >
+            联系司机
+          </Button>
+          <Button
+            className={classnames(styles.receiptStatusBtn, styles.receiptStatusPrimary)}
+            onClick={handleGoReceipt}
+          >
+            去验温
+          </Button>
+        </View>
+      )}
     </View>
   );
 };

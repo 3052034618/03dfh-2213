@@ -285,3 +285,68 @@
   font-size: $font-size-md;
   color: $color-text-secondary;
 }
+
+.receiptStatusCard {
+  margin: 0 $page-padding $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  padding: $spacing-lg;
+  border: 2rpx solid $color-success-bg;
+}
+
+.receiptStatusHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-lg;
+  padding-bottom: $spacing-md;
+  border-bottom: 2rpx solid $color-border;
+}
+
+.receiptStatusIcon {
+  width: 48rpx;
+  height: 48rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: $font-weight-bold;
+}
+
+.receiptStatusTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-success;
+}
+
+.receiptStatusGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+}
+
+.receiptStatusItem {
+  flex: 0 0 calc(50% - #{$spacing-sm});
+}
+
+.receiptStatusItemFull {
+  flex: 1 0 100%;
+}
+
+.receiptStatusLabel {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-bottom: 6rpx;
+  display: block;
+}
+
+.receiptStatusValue {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: block;
+}

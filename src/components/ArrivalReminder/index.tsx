@@ -34,7 +34,9 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
     getWaybillById,
     setSelectedReceiptWaybillId,
     setCurrentWaybill,
-    receiptRecords
+    receiptRecords,
+    readReminder,
+    snoozeReminder
   } = useWaybillStore();
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -51,7 +53,7 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
 
   const reminders = useMemo(() => {
     const all = getArrivalReminders();
-    return all;
+    return all.filter(r => !r.isSnoozed);
   }, [getArrivalReminders, nowTimestamp, receiptRecords]);
 
   const displayReminders = useMemo(() => {
@@ -63,6 +65,7 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
   }, [reminders, currentWaybillId]);
 
   const handleGoReceipt = (waybillId: string) => {
+    readReminder(waybillId);
     const waybill = getWaybillById(waybillId);
     if (waybill) {
       setCurrentWaybill(waybill);
@@ -72,11 +75,24 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
   };
 
   const handleGoProgress = (waybillId: string) => {
+    readReminder(waybillId);
     const waybill = getWaybillById(waybillId);
     if (waybill) {
       setCurrentWaybill(waybill);
     }
     Taro.switchTab({ url: '/pages/progress/index' });
+  };
+
+  const handleSnooze = (e: any, waybillId: string) => {
+    e.stopPropagation();
+    console.log('[ArrivalReminder] 稍后提醒:', waybillId);
+    snoozeReminder(waybillId);
+  };
+
+  const handleRead = (e: any, waybillId: string) => {
+    e.stopPropagation();
+    console.log('[ArrivalReminder] 标记已读:', waybillId);
+    readReminder(waybillId);
   };
 
   if (displayReminders.length === 0) return null;
@@ -102,7 +118,8 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
             className={classnames(
               styles.card,
               r.predictRisk === 'warn' && styles.cardWarn,
-              r.predictRisk === 'high' && styles.cardHigh
+              r.predictRisk === 'high' && styles.cardHigh,
+              r.isRead && styles.cardRead
             )}
             onClick={() => handleGoProgress(r.waybillId)}
           >
@@ -131,10 +148,7 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
             <View className={styles.actions}>
               <View
                 className={styles.actionReceipt}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGoReceipt(r.waybillId);
-                }}
+                onClick={(e) => handleGoReceipt(r.waybillId)}
               >
                 📋 去验温
               </View>
@@ -149,6 +163,18 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
                   📞 联系司机
                 </View>
               )}
+              <View
+                className={styles.actionSnooze}
+                onClick={(e) => handleSnooze(e, r.waybillId)}
+              >
+                ⏰ 稍后
+              </View>
+              <View
+                className={styles.actionRead}
+                onClick={(e) => handleRead(e, r.waybillId)}
+              >
+                ✓
+              </View>
             </View>
           </View>
         );
