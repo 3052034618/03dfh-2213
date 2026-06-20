@@ -8,6 +8,7 @@ import ProgressTimeline from '@/components/ProgressTimeline';
 import RiskBadge from '@/components/RiskBadge';
 import WarningRecord from '@/components/WarningRecord';
 import ArrivalReminder from '@/components/ArrivalReminder';
+import ExceptionCard from '@/components/ExceptionCard';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill } from '@/types';
 import { formatTime, maskPhone, getPackageConditionText, formatFullTime } from '@/utils';
@@ -21,7 +22,8 @@ const ProgressPage: React.FC = () => {
     tickNow,
     setSelectedReceiptWaybillId,
     setCurrentWaybill,
-    getReceipt
+    getReceipt,
+    getExceptionsByWaybill
   } = useWaybillStore();
 
   const [currentWaybillId, setCurrentWaybillId] = useState<string>('1');
@@ -106,6 +108,7 @@ const ProgressPage: React.FC = () => {
 
   const receipt = getReceipt(currentWaybill.id);
   const hasReceipt = !!receipt;
+  const exceptions = getExceptionsByWaybill(currentWaybill.id);
 
   return (
     <View className={styles.page}>
@@ -203,6 +206,17 @@ const ProgressPage: React.FC = () => {
       </View>
 
       <WarningRecord warnings={currentWaybill.warnings} />
+
+      {exceptions.length > 0 && (
+        <View style={{ margin: `0 ${32}rpx ${24}rpx` }}>
+          <Text style={{ fontSize: 32, fontWeight: 600, color: '#1D2129', marginBottom: 24, display: 'block' }}>
+            异常处理记录
+          </Text>
+          {exceptions.map(exc => (
+            <ExceptionCard key={exc.id} exception={exc} />
+          ))}
+        </View>
+      )}
 
       {hasReceipt && receipt ? (
         <View className={styles.receiptStatusCard}>

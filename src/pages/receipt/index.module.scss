@@ -638,3 +638,64 @@
   margin-top: 4rpx;
   display: block;
 }
+
+.queueItemExcBadge {
+  min-width: 36rpx;
+  height: 36rpx;
+  padding: 0 10rpx;
+  background: $color-error;
+  color: $color-text-white;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.exceptionNotice {
+  width: 100%;
+  background: $color-error-bg;
+  border: 2rpx solid $color-error;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  margin-bottom: $spacing-lg;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.exceptionNoticeIcon {
+  font-size: 40rpx;
+}
+
+.exceptionNoticeText {
+  font-size: $font-size-sm;
+  color: $color-error;
+  font-weight: $font-weight-medium;
+  flex: 1;
+}
+
+.reminderBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: $color-warning-bg;
+  color: $color-warning;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin: $spacing-lg 0 $spacing-md;
+  display: block;
+  width: 100%;
+}

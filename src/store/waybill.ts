@@ -1,5 +1,12 @@
 import { create } from 'zustand';
-import type { Waybill, ReceiptForm, RiskLevel } from '@/types';
+import type {
+  Waybill,
+  ReceiptForm,
+  RiskLevel,
+  ExceptionRecord,
+  ExceptionType,
+  PackageCondition
+} from '@/types';
 import { mockWaybills } from '@/data/mock';
 
 interface ArrivalReminder {
@@ -25,10 +32,17 @@ interface ReceiptQueueGroup {
   waybills: Waybill[];
 }
 
+interface ReceiptProgress {
+  totalPending: number;
+  completed: number;
+  exceptions: number;
+}
+
 interface WaybillStore {
   waybills: Waybill[];
   currentWaybill: Waybill | null;
   receiptRecords: Record<string, ReceiptForm>;
+  exceptionRecords: Record<string, ExceptionRecord[]>;
   searchKeyword: string;
   statusFilter: string;
   selectedReceiptWaybillId: string | null;
@@ -42,7 +56,7 @@ interface WaybillStore {
   setSelectedReceiptWaybillId: (id: string | null) => void;
   getWaybillById: (id: string) => Waybill | undefined;
   getWaybillByNo: (no: string) => Waybill | undefined;
-  saveReceipt: (waybillId: string, form: ReceiptForm) => void;
+  saveReceipt: (waybillId: string, form: ReceiptForm) => ExceptionRecord[];
   getReceipt: (waybillId: string) => ReceiptForm | undefined;
   getFilteredWaybills: () => Waybill[];
   tickNow: () => void;
@@ -52,6 +66,17 @@ interface WaybillStore {
   readReminder: (waybillId: string) => void;
   getReceiptQueue: () => ReceiptQueueGroup[];
   getNextPendingReceipt: (currentId?: string) => Waybill | null;
+  getReceiptProgress: () => ReceiptProgress;
+  getExceptionsByWaybill: (waybillId: string) => ExceptionRecord[];
+  getAllExceptions: () => ExceptionRecord[];
+  updateException: (exceptionId: string, updates: Partial<ExceptionRecord>) => void;
+  resolveException: (exceptionId: string, handlerName: string, remark?: string) => void;
+  getReminderCenter: () => {
+    pending: ArrivalReminder[];
+    read: ArrivalReminder[];
+    snoozed: ArrivalReminder[];
+    handled: ArrivalReminder[];
+  };
 }
 
 const calcPredictTemp = (w: Waybill): number => {
@@ -69,10 +94,61 @@ const calcPredictRisk = (temp: number, min: number, max: number): RiskLevel => {
 
 const riskOrder: Record<RiskLevel, number> = { low: 0, warn: 1, high: 2 };
 
+const generateExceptionId = () =>
+  'EXC_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+
+const detectExceptions = (
+  waybill: Waybill,
+  form: ReceiptForm
+): Omit<ExceptionRecord, 'id' | 'waybillId' | 'createdAt'>[] => {
+  const exceptions: Omit<ExceptionRecord, 'id' | 'waybillId' | 'createdAt'>[] = [];
+
+  if (form.actualTemperature !== null && form.actualTemperature !== undefined) {
+    const { min, max } = waybill.agreeTempRange;
+    if (form.actualTemperature < min || form.actualTemperature > max) {
+      exceptions.push({
+        type: 'temp_out_of_range',
+        status: 'pending',
+        title: '实测温度超出约定范围',
+        description: `实测温度 ${form.actualTemperature}°C，约定范围 ${min}°C ~ ${max}°C，请联系承运方确认货物状态。`,
+        actualTemp: form.actualTemperature,
+        agreedMin: min,
+        agreedMax: max
+      });
+    }
+  }
+
+  if (form.packageCondition && form.packageCondition !== 'good') {
+    const isSevere = form.packageCondition === 'damaged';
+    exceptions.push({
+      type: 'package_damaged',
+      status: 'pending',
+      title: isSevere ? '外包装严重破损' : '外包装轻微破损',
+      description: isSevere
+        ? '外包装严重破损，建议拍照留证并联系司机确认货物是否受影响。'
+        : '外包装轻微破损，建议拍照留证，如内物无异常可正常收货。',
+      packageCondition: form.packageCondition
+    });
+  }
+
+  if (form.isRejected) {
+    exceptions.push({
+      type: 'rejected',
+      status: 'pending',
+      title: '货物已拒收',
+      description: `拒收原因：${form.rejectReason || '未填写'}，请联系承运方协商后续处理。`,
+      packageCondition: form.packageCondition || undefined
+    });
+  }
+
+  return exceptions;
+};
+
 export const useWaybillStore = create<WaybillStore>((set, get) => ({
   waybills: mockWaybills,
   currentWaybill: null,
   receiptRecords: {},
+  exceptionRecords: {},
   searchKeyword: '',
   statusFilter: 'all',
   selectedReceiptWaybillId: null,
@@ -94,12 +170,34 @@ export const useWaybillStore = create<WaybillStore>((set, get) => ({
 
   saveReceipt: (waybillId: string, form: ReceiptForm) => {
     console.log('[Store] 保存验温记录:', waybillId, form);
+    const waybill = get().getWaybillById(waybillId);
+    const generated: ExceptionRecord[] = [];
+    if (waybill) {
+      const detected = detectExceptions(waybill, form);
+      if (detected.length > 0) {
+        const records = detected.map(d => ({
+          ...d,
+          id: generateExceptionId(),
+          waybillId,
+          createdAt: new Date().toISOString()
+        }));
+        console.log('[Store] 自动生成异常记录:', records);
+        set(state => ({
+          exceptionRecords: {
+            ...state.exceptionRecords,
+            [waybillId]: [...(state.exceptionRecords[waybillId] || []), ...records]
+          }
+        }));
+        generated.push(...records);
+      }
+    }
     set(state => ({
       receiptRecords: {
         ...state.receiptRecords,
         [waybillId]: form
       }
     }));
+    return generated;
   },
 
   getReceipt: (waybillId: string) => get().receiptRecords[waybillId],
@@ -229,7 +327,6 @@ export const useWaybillStore = create<WaybillStore>((set, get) => ({
     if (arriving.length > 0) groups.push({ title: '即将到达（30分钟内）', waybills: arriving });
     if (arrived.length > 0) groups.push({ title: '已到达，待验温', waybills: arrived });
     if (done.length > 0) groups.push({ title: '已验温', waybills: done });
-    console.log('[Store] 待验温队列:', groups);
     return groups;
   },
 
@@ -240,5 +337,91 @@ export const useWaybillStore = create<WaybillStore>((set, get) => ({
     const idx = pending.findIndex(w => w.id === currentId);
     if (idx === -1) return pending[0] || null;
     return pending[idx + 1] || null;
+  },
+
+  getReceiptProgress: () => {
+    const { waybills, nowTimestamp, receiptRecords, exceptionRecords } = get();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayTs = todayStart.getTime();
+
+    let totalPending = 0;
+    let completed = 0;
+    let exceptions = 0;
+
+    for (const w of waybills) {
+      if (w.status === 'pending') continue;
+      const hasReceipt = !!receiptRecords[w.id];
+      const etaTs = new Date(w.estimatedArrival).getTime();
+
+      if (etaTs >= todayTs) {
+        if (!hasReceipt) {
+          const etaMs = etaTs - nowTimestamp;
+          const minutesLeft = Math.round(etaMs / 60000);
+          if (minutesLeft <= 60 && minutesLeft >= -180) {
+            totalPending++;
+          }
+        } else {
+          completed++;
+          const excs = exceptionRecords[w.id] || [];
+          if (excs.some(e => e.status !== 'resolved')) {
+            exceptions++;
+          }
+        }
+      }
+    }
+    return { totalPending, completed, exceptions };
+  },
+
+  getExceptionsByWaybill: (waybillId: string) => {
+    return get().exceptionRecords[waybillId] || [];
+  },
+
+  getAllExceptions: () => {
+    const { exceptionRecords } = get();
+    return Object.values(exceptionRecords).flat().sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  },
+
+  updateException: (exceptionId: string, updates: Partial<ExceptionRecord>) => {
+    console.log('[Store] 更新异常记录:', exceptionId, updates);
+    set(state => {
+      const newExceptionRecords = { ...state.exceptionRecords };
+      for (const waybillId of Object.keys(newExceptionRecords)) {
+        const idx = newExceptionRecords[waybillId].findIndex(e => e.id === exceptionId);
+        if (idx !== -1) {
+          newExceptionRecords[waybillId] = [
+            ...newExceptionRecords[waybillId].slice(0, idx),
+            { ...newExceptionRecords[waybillId][idx], ...updates, updatedAt: new Date().toISOString() },
+            ...newExceptionRecords[waybillId].slice(idx + 1)
+          ];
+          break;
+        }
+      }
+      return { exceptionRecords: newExceptionRecords };
+    });
+  },
+
+  resolveException: (exceptionId: string, handlerName: string, remark?: string) => {
+    console.log('[Store] 解决异常:', exceptionId, handlerName);
+    get().updateException(exceptionId, {
+      status: 'resolved',
+      handledAt: new Date().toISOString(),
+      handlerName,
+      handleRemark: remark
+    });
+  },
+
+  getReminderCenter: () => {
+    const all = get().getArrivalReminders(true);
+    const { receiptRecords } = get();
+
+    const pending = all.filter(r => !r.isRead && !r.isSnoozed && !receiptRecords[r.waybillId]);
+    const read = all.filter(r => r.isRead && !r.isSnoozed && !receiptRecords[r.waybillId]);
+    const snoozed = all.filter(r => r.isSnoozed && !receiptRecords[r.waybillId]);
+    const handled = all.filter(r => !!receiptRecords[r.waybillId]);
+
+    return { pending, read, snoozed, handled };
   }
 }));

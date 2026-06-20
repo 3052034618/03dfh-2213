@@ -5,6 +5,8 @@ import classnames from 'classnames';
 import styles from './index.module.scss';
 import WarningRecordComp from '@/components/WarningRecord';
 import ArrivalReminder from '@/components/ArrivalReminder';
+import ExceptionCard from '@/components/ExceptionCard';
+import ReceiptProgress from '@/components/ReceiptProgress';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill, PackageCondition, ReceiptForm } from '@/types';
 import { formatFullTime, getPackageConditionText, formatTime } from '@/utils';
@@ -20,7 +22,8 @@ const ReceiptPage: React.FC = () => {
     getReceiptQueue,
     getNextPendingReceipt,
     tickNow,
-    nowTimestamp
+    nowTimestamp,
+    getExceptionsByWaybill
   } = useWaybillStore();
 
   const [selectedWaybillId, setSelectedWaybillId] = useState<string>('');
@@ -76,6 +79,7 @@ const ReceiptPage: React.FC = () => {
   );
 
   const existingReceipt = selectedWaybill ? getReceipt(selectedWaybill.id) : undefined;
+  const exceptions = selectedWaybill ? getExceptionsByWaybill(selectedWaybill.id) : [];
 
   const resetForm = () => {
     setActualTemp('');
@@ -152,12 +156,28 @@ const ReceiptPage: React.FC = () => {
       operateTime: new Date().toISOString()
     };
     console.log('[ReceiptPage] 提交验温单:', form);
-    saveReceipt(selectedWaybill.id, form);
+    const generated = saveReceipt(selectedWaybill.id, form);
+    console.log('[ReceiptPage] 自动生成异常记录:', generated.length, '条');
 
     const next = getNextPendingReceipt(selectedWaybill.id);
     console.log('[ReceiptPage] 下一张待处理运单:', next?.id);
 
-    if (next) {
+    if (generated.length > 0) {
+      Taro.showModal({
+        title: '验温成功',
+        content: `检测到 ${generated.length} 个异常，已生成处理单，请及时处理。`,
+        showCancel: !!next,
+        confirmText: next ? '继续下一张' : '查看异常',
+        cancelText: '查看异常',
+        success: (res) => {
+          if (res.confirm) {
+            if (next) {
+              handleSelectWaybill(next);
+            }
+          }
+        }
+      });
+    } else if (next) {
       Taro.showToast({ title: '验温成功，自动切换下一张', icon: 'none' });
       setTimeout(() => {
         handleSelectWaybill(next);
@@ -182,6 +202,10 @@ const ReceiptPage: React.FC = () => {
 
   const goToWaybills = () => {
     Taro.switchTab({ url: '/pages/waybills/index' });
+  };
+
+  const goToReminders = () => {
+    Taro.switchTab({ url: '/pages/reminders/index' });
   };
 
   const getMinutesLeft = (w: Waybill) => {
@@ -211,6 +235,7 @@ const ReceiptPage: React.FC = () => {
         </View>
 
         <View className={styles.content}>
+          <ReceiptProgress />
           <ArrivalReminder />
         </View>
 
@@ -239,97 +264,124 @@ const ReceiptPage: React.FC = () => {
             {existingReceipt.isRejected ? '已拒收，请联系承运方' : '验温记录已保存'}
           </Text>
         </View>
-        <View className={styles.successState}>
-          <View className={classnames(styles.successIcon, existingReceipt.isRejected && styles.rejectIcon)}>
-            {existingReceipt.isRejected ? '×' : '✓'}
-          </View>
-          <Text className={classnames(styles.successTitle, existingReceipt.isRejected && styles.rejectTitle)}>
-            {existingReceipt.isRejected ? '已拒收' : '验温成功'}
-          </Text>
-          <Text className={styles.successDesc}>
-            验温记录已同步至承运方，可用于后续对账沟通
-          </Text>
-          <View className={styles.successReceiptInfo}>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>运单号</Text>
-              <Text className={styles.successReceiptValue}>{selectedWaybill.waybillNo}</Text>
+
+        <View className={styles.content}>
+          <ReceiptProgress />
+
+          <View className={styles.successState}>
+            <View className={classnames(styles.successIcon, existingReceipt.isRejected && styles.rejectIcon)}>
+              {existingReceipt.isRejected ? '×' : '✓'}
             </View>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>货物名称</Text>
-              <Text className={styles.successReceiptValue}>{selectedWaybill.goodsName}</Text>
-            </View>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>实测温度</Text>
-              <Text className={styles.successReceiptValue}>
-                {existingReceipt.actualTemperature}°C
-              </Text>
-            </View>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>约定范围</Text>
-              <Text className={styles.successReceiptValue}>
-                {selectedWaybill.agreeTempRange.min}°C ~ {selectedWaybill.agreeTempRange.max}°C
-              </Text>
-            </View>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>包装状态</Text>
-              <Text className={styles.successReceiptValue}>
-                {getPackageConditionText(existingReceipt.packageCondition || '')}
-              </Text>
-            </View>
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>是否拒收</Text>
-              <Text
-                className={styles.successReceiptValue}
-                style={{ color: existingReceipt.isRejected ? '#F44336' : '#4CAF50' }}
-              >
-                {existingReceipt.isRejected ? '已拒收' : '正常收货'}
-              </Text>
-            </View>
-            {existingReceipt.isRejected && existingReceipt.rejectReason && (
-              <View className={styles.successReceiptRow}>
-                <Text className={styles.successReceiptLabel}>拒收原因</Text>
-                <Text className={styles.successReceiptValue}>{existingReceipt.rejectReason}</Text>
+            <Text className={classnames(styles.successTitle, existingReceipt.isRejected && styles.rejectTitle)}>
+              {existingReceipt.isRejected ? '已拒收' : '验温成功'}
+            </Text>
+            <Text className={styles.successDesc}>
+              验温记录已同步至承运方，可用于后续对账沟通
+            </Text>
+
+            {exceptions.length > 0 && (
+              <View className={styles.exceptionNotice}>
+                <Text className={styles.exceptionNoticeIcon}>⚠️</Text>
+                <Text className={styles.exceptionNoticeText}>
+                  检测到 {exceptions.length} 个异常情况，请点击下方处理
+                </Text>
               </View>
             )}
-            {existingReceipt.remark && (
+
+            <View className={styles.successReceiptInfo}>
               <View className={styles.successReceiptRow}>
-                <Text className={styles.successReceiptLabel}>备注</Text>
-                <Text className={styles.successReceiptValue}>{existingReceipt.remark}</Text>
+                <Text className={styles.successReceiptLabel}>运单号</Text>
+                <Text className={styles.successReceiptValue}>{selectedWaybill.waybillNo}</Text>
+              </View>
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>货物名称</Text>
+                <Text className={styles.successReceiptValue}>{selectedWaybill.goodsName}</Text>
+              </View>
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>实测温度</Text>
+                <Text className={styles.successReceiptValue}>
+                  {existingReceipt.actualTemperature}°C
+                </Text>
+              </View>
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>约定范围</Text>
+                <Text className={styles.successReceiptValue}>
+                  {selectedWaybill.agreeTempRange.min}°C ~ {selectedWaybill.agreeTempRange.max}°C
+                </Text>
+              </View>
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>包装状态</Text>
+                <Text className={styles.successReceiptValue}>
+                  {getPackageConditionText(existingReceipt.packageCondition || '')}
+                </Text>
+              </View>
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>是否拒收</Text>
+                <Text
+                  className={styles.successReceiptValue}
+                  style={{ color: existingReceipt.isRejected ? '#F44336' : '#4CAF50' }}
+                >
+                  {existingReceipt.isRejected ? '已拒收' : '正常收货'}
+                </Text>
+              </View>
+              {existingReceipt.isRejected && existingReceipt.rejectReason && (
+                <View className={styles.successReceiptRow}>
+                  <Text className={styles.successReceiptLabel}>拒收原因</Text>
+                  <Text className={styles.successReceiptValue}>{existingReceipt.rejectReason}</Text>
+                </View>
+              )}
+              {existingReceipt.remark && (
+                <View className={styles.successReceiptRow}>
+                  <Text className={styles.successReceiptLabel}>备注</Text>
+                  <Text className={styles.successReceiptValue}>{existingReceipt.remark}</Text>
+                </View>
+              )}
+              {existingReceipt.operatorName && (
+                <View className={styles.successReceiptRow}>
+                  <Text className={styles.successReceiptLabel}>收货人</Text>
+                  <Text className={styles.successReceiptValue}>{existingReceipt.operatorName}</Text>
+                </View>
+              )}
+              <View className={styles.successReceiptRow}>
+                <Text className={styles.successReceiptLabel}>操作时间</Text>
+                <Text className={styles.successReceiptValue}>
+                  {formatFullTime(existingReceipt.operateTime || new Date().toISOString())}
+                </Text>
+              </View>
+            </View>
+
+            {exceptions.length > 0 && (
+              <View style={{ width: '100%' }}>
+                <Text className={styles.sectionTitle}>异常处理</Text>
+                {exceptions.map(exc => (
+                  <ExceptionCard key={exc.id} exception={exc} />
+                ))}
               </View>
             )}
-            {existingReceipt.operatorName && (
-              <View className={styles.successReceiptRow}>
-                <Text className={styles.successReceiptLabel}>收货人</Text>
-                <Text className={styles.successReceiptValue}>{existingReceipt.operatorName}</Text>
-              </View>
+
+            {queueGroups.length > 0 && queueGroups[0].waybills.some(w => !getReceipt(w.id)) && (
+              <Text className={styles.nextHint}>还有未处理的运单，可继续验温</Text>
             )}
-            <View className={styles.successReceiptRow}>
-              <Text className={styles.successReceiptLabel}>操作时间</Text>
-              <Text className={styles.successReceiptValue}>
-                {formatFullTime(existingReceipt.operateTime || new Date().toISOString())}
-              </Text>
+
+            <View className={styles.successActions}>
+              <Button className={styles.cancelBtn} onClick={handleEditAgain}>
+                修改验温
+              </Button>
+              <Button className={styles.reminderBtn} onClick={goToReminders}>
+                🔔 查看提醒
+              </Button>
+              <Button className={styles.submitBtn} onClick={goToWaybills}>
+                返回运单
+              </Button>
             </View>
           </View>
 
-          {queueGroups.length > 0 && queueGroups[0].waybills.some(w => !getReceipt(w.id)) && (
-            <Text className={styles.nextHint}>还有未处理的运单，可继续验温</Text>
+          {selectedWaybill.warnings.length > 0 && (
+            <View style={{ width: '100%' }}>
+              <WarningRecordComp warnings={selectedWaybill.warnings} />
+            </View>
           )}
-
-          <View className={styles.successActions}>
-            <Button className={styles.cancelBtn} onClick={handleEditAgain}>
-              修改验温
-            </Button>
-            <Button className={styles.submitBtn} onClick={goToWaybills}>
-              返回运单
-            </Button>
-          </View>
         </View>
-
-        {selectedWaybill.warnings.length > 0 && (
-          <View style={{ padding: `0 ${32}rpx` }}>
-            <WarningRecordComp warnings={selectedWaybill.warnings} />
-          </View>
-        )}
       </View>
     );
   }
@@ -342,6 +394,7 @@ const ReceiptPage: React.FC = () => {
       </View>
 
       <View className={styles.content}>
+        <ReceiptProgress />
         <ArrivalReminder />
 
         <Button className={styles.scanBtn} onClick={handleScan}>
@@ -369,6 +422,8 @@ const ReceiptPage: React.FC = () => {
               const receipt = getReceipt(w.id);
               const selected = w.id === selectedWaybillId;
               const arriving = isArriving(w);
+              const wexcs = getExceptionsByWaybill(w.id);
+              const pendingExcCount = wexcs.filter(e => e.status !== 'resolved').length;
               return (
                 <View
                   key={w.id}
@@ -385,6 +440,11 @@ const ReceiptPage: React.FC = () => {
                     {arriving && !receipt && (
                       <Text className={styles.queueItemArriving}>
                         {getMinutesLeft(w) <= 10 ? '🔥' : '⏰'}
+                      </Text>
+                    )}
+                    {pendingExcCount > 0 && (
+                      <Text className={styles.queueItemExcBadge}>
+                        {pendingExcCount}
                       </Text>
                     )}
                   </View>
@@ -417,6 +477,15 @@ const ReceiptPage: React.FC = () => {
             </View>
           </View>
         </View>
+
+        {exceptions.length > 0 && (
+          <View style={{ width: '100%' }}>
+            <Text className={styles.sectionTitle}>历史异常记录</Text>
+            {exceptions.map(exc => (
+              <ExceptionCard key={exc.id} exception={exc} />
+            ))}
+          </View>
+        )}
 
         <View className={styles.formCard}>
           <Text className={styles.formTitle}>验温信息</Text>

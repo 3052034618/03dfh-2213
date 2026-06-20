@@ -83,3 +83,34 @@ export const maskPhone = (phone: string): string => {
 export const generateId = (): string => {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);
 };
+
+import type { ExceptionType, ExceptionStatus } from '@/types';
+
+export const getExceptionTypeText = (type: ExceptionType): string => {
+  const texts: Record<ExceptionType, string> = {
+    temp_out_of_range: '温度异常',
+    package_damaged: '包装破损',
+    rejected: '已拒收'
+  };
+  return texts[type];
+};
+
+export const getExceptionStatusText = (status: ExceptionStatus): string => {
+  const texts: Record<ExceptionStatus, string> = {
+    pending: '待处理',
+    in_progress: '处理中',
+    resolved: '已处理'
+  };
+  return texts[status];
+};
+
+export const getExceptionStatusColor = (status: ExceptionStatus): string => {
+  const colors: Record<ExceptionStatus, string> = {
+    pending: '#F44336',
+    in_progress: '#FF9800',
+    resolved: '#4CAF50'
+  };
+  return colors[status];
+};
+
+export const getRiskLevelText = getRiskText;

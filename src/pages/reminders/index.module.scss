@@ -1,0 +1,144 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: linear-gradient(180deg, $color-primary-light 0%, $color-bg-page 300rpx);
+  padding-bottom: calc(#{env(safe-area-inset-bottom)} + 120rpx);
+}
+
+.header {
+  padding: 48rpx $page-padding $spacing-lg;
+
+  .title {
+    font-size: 48rpx;
+    font-weight: $font-weight-bold;
+    color: $color-text-white;
+    display: block;
+    margin-bottom: 8rpx;
+  }
+
+  .subtitle {
+    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.content {
+  padding: 0 $page-padding;
+}
+
+.tabs {
+  display: flex;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: 8rpx;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.tab {
+  flex: 1;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &Active {
+    background: $color-primary;
+    color: $color-text-white;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.tabCount {
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 10rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-round;
+  font-size: 20rpx;
+  font-weight: $font-weight-semibold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab:not(.tabActive) .tabCount {
+  background: $color-bg-page;
+  color: $color-text-secondary;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+
+  .emptyIcon {
+    font-size: 120rpx;
+    margin-bottom: $spacing-md;
+  }
+
+  .emptyTitle {
+    font-size: $font-size-lg;
+    color: $color-text-primary;
+    font-weight: $font-weight-semibold;
+    margin-bottom: $spacing-sm;
+  }
+
+  .emptyDesc {
+    font-size: $font-size-sm;
+    color: $color-text-tertiary;
+    text-align: center;
+    line-height: 1.6;
+  }
+}
+
+.statsBar {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+
+  .statNum {
+    font-size: 48rpx;
+    font-weight: $font-weight-bold;
+    line-height: 1.2;
+  }
+
+  .statLabel {
+    font-size: $font-size-xs;
+    color: $color-text-secondary;
+  }
+}
+
+.statDivider {
+  width: 2rpx;
+  height: 60rpx;
+  background: $color-border;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: block;
+}

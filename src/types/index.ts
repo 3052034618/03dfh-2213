@@ -70,3 +70,25 @@ export interface ReceiptForm {
   operatorName?: string;
   operateTime?: string;
 }
+
+export type ExceptionType = 'temp_out_of_range' | 'package_damaged' | 'rejected';
+export type ExceptionStatus = 'pending' | 'in_progress' | 'resolved';
+
+export interface ExceptionRecord {
+  id: string;
+  waybillId: string;
+  type: ExceptionType;
+  status: ExceptionStatus;
+  title: string;
+  description: string;
+  actualTemp?: number;
+  agreedMin?: number;
+  agreedMax?: number;
+  packageCondition?: PackageCondition;
+  photoUrls?: string[];
+  handleRemark?: string;
+  createdAt: string;
+  updatedAt?: string;
+  handledAt?: string;
+  handlerName?: string;
+}

@@ -148,7 +148,10 @@ const ArrivalReminder: React.FC<ArrivalReminderProps> = ({ currentWaybillId }) =
             <View className={styles.actions}>
               <View
                 className={styles.actionReceipt}
-                onClick={(e) => handleGoReceipt(r.waybillId)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGoReceipt(r.waybillId);
+                }}
               >
                 📋 去验温
               </View>

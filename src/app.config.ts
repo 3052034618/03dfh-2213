@@ -3,6 +3,7 @@ export default defineAppConfig({
     'pages/waybills/index',
     'pages/progress/index',
     'pages/receipt/index',
+    'pages/reminders/index',
     'pages/detail/index',
     'pages/scan/index'
   ],
@@ -30,6 +31,10 @@ export default defineAppConfig({
       {
         pagePath: 'pages/receipt/index',
         text: '收货验温'
+      },
+      {
+        pagePath: 'pages/reminders/index',
+        text: '提醒中心'
       }
     ]
   }
