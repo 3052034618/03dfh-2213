@@ -1,0 +1,314 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 40rpx;
+}
+
+.selectorCard {
+  margin: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  box-shadow: $shadow-card;
+}
+
+.selectorLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.selectorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.selectorInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectorNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.selectorGoods {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include text-ellipsis;
+}
+
+.selectorBtn {
+  @include button-reset;
+  padding: 12rpx 24rpx;
+  background: $color-primary-bg;
+  color: $color-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.etaCard {
+  margin: $spacing-md $page-padding;
+  background: linear-gradient(135deg, #1565C0 0%, #1E88E5 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  color: $color-text-white;
+  box-shadow: 0 8rpx 24rpx rgba(30, 136, 229, 0.3);
+}
+
+.etaHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+}
+
+.etaTitle {
+  font-size: $font-size-sm;
+  opacity: 0.9;
+}
+
+.etaStatus {
+  padding: 6rpx 16rpx;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.etaTime {
+  font-size: 80rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+  margin-bottom: $spacing-sm;
+}
+
+.etaDate {
+  font-size: $font-size-sm;
+  opacity: 0.85;
+  margin-bottom: $spacing-md;
+}
+
+.etaCountdown {
+  display: inline-flex;
+  align-items: center;
+  padding: 10rpx 20rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+}
+
+.noticeTip {
+  margin: $spacing-md $page-padding;
+  padding: $spacing-md;
+  background: $color-warning-bg;
+  border-radius: $radius-md;
+  border-left: 6rpx solid $color-warning;
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.noticeIcon {
+  font-size: $font-size-lg;
+  flex-shrink: 0;
+}
+
+.noticeText {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.noticeHighlight {
+  color: $color-warning;
+  font-weight: $font-weight-medium;
+}
+
+.sectionTitle {
+  margin: $spacing-lg $page-padding $spacing-md;
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.vehicleCard {
+  margin: 0 $page-padding $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.vehicleHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+}
+
+.vehicleInfo {
+  flex: 1;
+}
+
+.plateNo {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: 6rpx;
+}
+
+.carrier {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.callBtn {
+  @include button-reset;
+  padding: 16rpx 32rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.driverRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.driverInfo {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.driverAvatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $color-text-white;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+}
+
+.driverName {
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.emptyState {
+  margin: 120rpx $page-padding;
+  text-align: center;
+  padding: $spacing-xl;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.3;
+}
+
+.emptyTitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.emptyDesc {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+  line-height: 1.6;
+}
+
+.emptyBtn {
+  @include button-reset;
+  display: inline-flex;
+  padding: 20rpx 48rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+}
+
+.pushCard {
+  margin: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.pushHeader {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.pushIcon {
+  width: 48rpx;
+  height: 48rpx;
+  border-radius: 50%;
+  background: $color-success-bg;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-md;
+}
+
+.pushTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.pushContent {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-sm;
+}
+
+.pushTemp {
+  display: inline-flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  background: $color-success-bg;
+  color: $color-success;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+}

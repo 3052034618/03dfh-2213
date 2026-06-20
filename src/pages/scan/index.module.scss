@@ -1,0 +1,197 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding: $page-padding;
+}
+
+.scanArea {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  box-shadow: $shadow-card;
+  text-align: center;
+  margin-bottom: $spacing-lg;
+}
+
+.scanIconWrap {
+  width: 320rpx;
+  height: 320rpx;
+  margin: 0 auto $spacing-xl;
+  background: linear-gradient(135deg, rgba(30, 136, 229, 0.1) 0%, rgba(30, 136, 229, 0.2) 100%);
+  border-radius: $radius-xl;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.scanIcon {
+  font-size: 160rpx;
+}
+
+.scanFrame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 4rpx solid $color-primary;
+  border-radius: $radius-xl;
+  animation: pulse 2s infinite;
+}
+
+.scanLine {
+  position: absolute;
+  left: 32rpx;
+  right: 32rpx;
+  height: 4rpx;
+  background: linear-gradient(90deg, transparent, $color-primary, transparent);
+  animation: scanMove 2s infinite;
+}
+
+@keyframes scanMove {
+  0% { top: 32rpx; }
+  50% { top: calc(100% - 32rpx); }
+  100% { top: 32rpx; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.scanTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.scanDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-lg;
+}
+
+.scanBtn {
+  @include button-reset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-sm;
+  padding: 0 64rpx;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+}
+
+.inputSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+}
+
+.sectionTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+}
+
+.sectionIcon {
+  font-size: $font-size-lg;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: 0 $spacing-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.focused {
+    background: $color-bg-card;
+    border-color: $color-primary;
+  }
+}
+
+.input {
+  flex: 1;
+  height: 88rpx;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.searchBtn {
+  @include button-reset;
+  padding: 0 32rpx;
+  height: 72rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.tipSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+}
+
+.tipList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.tipItem {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: flex-start;
+}
+
+.tipNum {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: $color-primary-bg;
+  color: $color-primary;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  flex-shrink: 0;
+}
+
+.tipText {
+  flex: 1;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}

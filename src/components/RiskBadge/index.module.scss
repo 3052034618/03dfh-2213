@@ -1,0 +1,52 @@
+@use '@/styles/variables.scss' as *;
+
+.riskBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  white-space: nowrap;
+
+  &.low {
+    background: $color-success-bg;
+    color: $color-risk-low;
+  }
+
+  &.warn {
+    background: $color-warning-bg;
+    color: $color-risk-warn;
+  }
+
+  &.high {
+    background: $color-error-bg;
+    color: $color-risk-high;
+  }
+}
+
+.dot {
+  width: 12rpx;
+  height: 12rpx;
+  border-radius: 50%;
+  margin-right: 8rpx;
+
+  .low & {
+    background: $color-risk-low;
+  }
+
+  .warn & {
+    background: $color-risk-warn;
+    animation: pulse 1.5s infinite;
+  }
+
+  .high & {
+    background: $color-risk-high;
+    animation: pulse 1s infinite;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

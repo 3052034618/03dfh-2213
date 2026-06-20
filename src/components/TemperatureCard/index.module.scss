@@ -1,0 +1,104 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: linear-gradient(135deg, #1E88E5 0%, #64B5F6 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-xl;
+  color: $color-text-white;
+  box-shadow: 0 8rpx 24rpx rgba(30, 136, 229, 0.3);
+  margin-bottom: $spacing-md;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+}
+
+.title {
+  font-size: $font-size-md;
+  opacity: 0.9;
+  font-weight: $font-weight-medium;
+}
+
+.statusBadge {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.tempMain {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: $spacing-lg;
+}
+
+.tempLeft {
+  display: flex;
+  align-items: baseline;
+}
+
+.currentTemp {
+  font-size: 96rpx;
+  font-weight: $font-weight-bold;
+  line-height: 1;
+}
+
+.tempUnit {
+  font-size: $font-size-xl;
+  margin-left: $spacing-xs;
+  opacity: 0.8;
+}
+
+.tempRight {
+  text-align: right;
+}
+
+.tempLabel {
+  font-size: $font-size-sm;
+  opacity: 0.8;
+  margin-bottom: 6rpx;
+}
+
+.tempRange {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  padding-top: $spacing-lg;
+  border-top: 1rpx solid rgba(255, 255, 255, 0.2);
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  margin-bottom: 4rpx;
+}
+
+.statLabel {
+  font-size: $font-size-xs;
+  opacity: 0.75;
+}
+
+.normal {
+  background: rgba(76, 175, 80, 0.9);
+}
+
+.warn {
+  background: rgba(255, 152, 0, 0.9);
+}
+
+.danger {
+  background: rgba(244, 67, 54, 0.95);
+}

@@ -1,0 +1,481 @@
+@use '@/styles/variables.scss' as *;
+
+.page {
+  min-height: 100vh;
+  padding-bottom: 200rpx;
+}
+
+.header {
+  background: linear-gradient(180deg, #1E88E5 0%, #42A5F5 100%);
+  padding: 40rpx $page-padding 48rpx;
+  border-bottom-left-radius: 32rpx;
+  border-bottom-right-radius: 32rpx;
+  margin-bottom: -16rpx;
+}
+
+.title {
+  font-size: $font-size-xxl;
+  font-weight: $font-weight-bold;
+  color: $color-text-white;
+  margin-bottom: 8rpx;
+}
+
+.subtitle {
+  font-size: $font-size-sm;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.content {
+  padding: 0 $page-padding;
+}
+
+.waybillSelectCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.selectLabel {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-sm;
+}
+
+.selectRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.selectInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.selectNo {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 4rpx;
+}
+
+.selectGoods {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  @include text-ellipsis;
+}
+
+.selectBtn {
+  @include button-reset;
+  padding: 12rpx 24rpx;
+  background: $color-primary-bg;
+  color: $color-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.scanBtn {
+  @include button-reset;
+  width: 100%;
+  height: $button-height-md;
+  background: $color-bg-card;
+  color: $color-primary;
+  border: 2rpx dashed $color-primary;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+  margin-bottom: $spacing-md;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.formCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.formTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-lg;
+}
+
+.formItem {
+  margin-bottom: $spacing-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.formLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.required {
+  color: $color-error;
+}
+
+.tempInputWrap {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  padding: 0 $spacing-lg;
+  height: 96rpx;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  border: 2rpx solid transparent;
+  transition: all $transition-base;
+
+  &.focused {
+    background: $color-bg-card;
+    border-color: $color-primary;
+  }
+}
+
+.tempUnit {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.tempInput {
+  flex: 1;
+  height: 100%;
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  text-align: center;
+}
+
+.tempRange {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacing-sm;
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.tempAgree {
+  color: $color-primary;
+  font-weight: $font-weight-medium;
+}
+
+.optionGroup {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.optionItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  padding: 0 $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  border: 2rpx solid transparent;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  transition: all $transition-base;
+
+  &.active {
+    background: $color-primary-bg;
+    border-color: $color-primary;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &.damaged.active {
+    background: $color-error-bg;
+    border-color: $color-error;
+    color: $color-error;
+  }
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md 0;
+}
+
+.toggleLabel {
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.toggleHint {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  margin-top: 4rpx;
+}
+
+.rejectReason {
+  padding: $spacing-md;
+  background: $color-error-bg;
+  border-radius: $radius-md;
+  margin-top: $spacing-sm;
+}
+
+.rejectInput {
+  width: 100%;
+  min-height: 120rpx;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  background: $color-bg-card;
+  border-radius: $radius-sm;
+  padding: $spacing-sm $spacing-md;
+  box-sizing: border-box;
+}
+
+.remarkInput {
+  width: 100%;
+  min-height: 120rpx;
+  padding: $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  box-sizing: border-box;
+}
+
+.operatorInput {
+  width: 100%;
+  height: 80rpx;
+  padding: 0 $spacing-md;
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  font-size: $font-size-md;
+  color: $color-text-primary;
+}
+
+.warningsPreviewCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.warningsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.warningsTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.warningsBadge {
+  padding: 4rpx 16rpx;
+  background: $color-warning-bg;
+  color: $color-warning;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.warningMiniItem {
+  padding: $spacing-md;
+  background: $color-warning-bg;
+  border-radius: $radius-md;
+  margin-bottom: $spacing-sm;
+  border-left: 6rpx solid $color-warning;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.high {
+    background: $color-error-bg;
+    border-left-color: $color-error;
+  }
+}
+
+.warningMiniTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 6rpx;
+}
+
+.warningMiniDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.5;
+}
+
+.noWarnings {
+  text-align: center;
+  padding: $spacing-lg 0;
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
+
+.footerBar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc(#{$spacing-md} + env(safe-area-inset-bottom));
+  background: $color-bg-card;
+  box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.cancelBtn {
+  @include button-reset;
+  flex: 1;
+  height: $button-height-lg;
+  background: $color-bg-page;
+  color: $color-text-secondary;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.8;
+  }
+}
+
+.submitBtn {
+  @include button-reset;
+  flex: 2;
+  height: $button-height-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.99);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+}
+
+.successState {
+  padding: 80rpx $spacing-xl;
+  text-align: center;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+  margin: $spacing-md $page-padding;
+}
+
+.successIcon {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: $color-success-bg;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 80rpx;
+  margin-bottom: $spacing-lg;
+}
+
+.successTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-sm;
+}
+
+.successDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-xl;
+}
+
+.successReceiptInfo {
+  background: $color-bg-page;
+  border-radius: $radius-md;
+  padding: $spacing-lg;
+  text-align: left;
+}
+
+.successReceiptRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+  font-size: $font-size-sm;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.successReceiptLabel {
+  color: $color-text-tertiary;
+}
+
+.successReceiptValue {
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+}
+
+.successActions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-xl;
+}
+
+.emptyState {
+  margin: 120rpx $page-padding;
+  text-align: center;
+  padding: $spacing-xl;
+}
+
+.emptyIcon {
+  font-size: 120rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.3;
+}
+
+.emptyTitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+  margin-bottom: $spacing-sm;
+}
+
+.emptyDesc {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-bottom: $spacing-lg;
+}

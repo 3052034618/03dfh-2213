@@ -1,0 +1,128 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-md;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-md;
+}
+
+.title {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.count {
+  padding: 4rpx 16rpx;
+  background: $color-error-bg;
+  color: $color-error;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.warningList {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.warningItem {
+  padding: $spacing-md;
+  border-radius: $radius-md;
+  border-left: 6rpx solid transparent;
+
+  &.low {
+    background: $color-success-bg;
+    border-left-color: $color-risk-low;
+  }
+
+  &.warn {
+    background: $color-warning-bg;
+    border-left-color: $color-risk-warn;
+  }
+
+  &.high {
+    background: $color-error-bg;
+    border-left-color: $color-risk-high;
+  }
+}
+
+.warningHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: $spacing-sm;
+}
+
+.warningTitle {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+
+  .low & { color: $color-risk-low; }
+  .warn & { color: $color-risk-warn; }
+  .high & { color: $color-risk-high; }
+}
+
+.typeTag {
+  padding: 2rpx 12rpx;
+  border-radius: $radius-xs;
+  font-size: $font-size-xs;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.warningTime {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+}
+
+.warningDesc {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+  margin-bottom: $spacing-sm;
+}
+
+.warningTemp {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+}
+
+.tempValue {
+  font-weight: $font-weight-semibold;
+  font-size: $font-size-md;
+
+  .warn & { color: $color-risk-warn; }
+  .high & { color: $color-risk-high; }
+}
+
+.emptyState {
+  padding: $spacing-xl 0;
+  text-align: center;
+}
+
+.emptyIcon {
+  font-size: 80rpx;
+  margin-bottom: $spacing-md;
+  opacity: 0.5;
+}
+
+.emptyText {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+}
