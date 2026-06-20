@@ -36,6 +36,8 @@ export const getRiskText = (level: RiskLevel): string => {
   return texts[level];
 };
 
+export const getRiskLevelText = getRiskText;
+
 export const getStatusText = (status: WaybillStatus): string => {
   const texts: Record<WaybillStatus, string> = {
     pending: '待装车',

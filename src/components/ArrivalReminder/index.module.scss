@@ -1,0 +1,113 @@
+@use '@/styles/variables.scss' as *;
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+}
+
+.card {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  border: 2rpx solid transparent;
+}
+
+.cardWarn {
+  border-color: rgba(255, 152, 0, 0.3);
+}
+
+.cardHigh {
+  border-color: rgba(244, 67, 54, 0.3);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  margin-bottom: $spacing-sm;
+}
+
+.icon {
+  font-size: $font-size-lg;
+}
+
+.title {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  flex: 1;
+}
+
+.riskTag {
+  padding: 6rpx 16rpx;
+  border-radius: $radius-round;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+}
+
+.body {
+  margin-bottom: $spacing-md;
+}
+
+.goodsName {
+  font-size: $font-size-sm;
+  color: $color-text-primary;
+  font-weight: $font-weight-medium;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.waybillNo {
+  font-size: $font-size-xs;
+  color: $color-text-tertiary;
+  font-weight: $font-weight-regular;
+}
+
+.timeText {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  gap: $spacing-sm;
+}
+
+.actionReceipt {
+  @include button-reset;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  background: $color-primary;
+  color: $color-text-white;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}
+
+.actionCall {
+  @include button-reset;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 72rpx;
+  background: $color-warning-bg;
+  color: $color-warning;
+  border-radius: $radius-button;
+  font-size: $font-size-sm;
+  font-weight: $font-weight-medium;
+
+  &:active {
+    opacity: 0.9;
+  }
+}

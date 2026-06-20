@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import styles from './index.module.scss';
 import WaybillCard from '@/components/WaybillCard';
+import ArrivalReminder from '@/components/ArrivalReminder';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill } from '@/types';
 
@@ -92,6 +93,7 @@ const WaybillsPage: React.FC = () => {
       </View>
 
       <View className={styles.filterSection}>
+        <ArrivalReminder />
         <ScrollView scrollX className={styles.filterScroll} showScrollbar={false}>
           {filterOptions.map((opt) => (
             <View

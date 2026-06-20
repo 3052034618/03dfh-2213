@@ -4,6 +4,7 @@ import Taro from '@tarojs/taro';
 import classnames from 'classnames';
 import styles from './index.module.scss';
 import WarningRecordComp from '@/components/WarningRecord';
+import ArrivalReminder from '@/components/ArrivalReminder';
 import { useWaybillStore } from '@/store/waybill';
 import type { Waybill, PackageCondition, ReceiptForm } from '@/types';
 import { formatFullTime, getPackageConditionText } from '@/utils';
@@ -311,6 +312,8 @@ const ReceiptPage: React.FC = () => {
 
       <View className={styles.content}>
         <View style={{ height: 16 }} />
+
+        <ArrivalReminder currentWaybillId={selectedWaybill?.id} />
 
         <View className={styles.waybillSelectCard}>
           <Text className={styles.selectLabel}>待验运单</Text>
